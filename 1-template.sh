@@ -1,15 +1,37 @@
 #!/bin/bash
 
-set -euxo pipefail
-
 ### Create a Debian Cloud-Init Ready VM Template ###
 
+set -euxo pipefail
+
+ENV_DIR=$1
+ENV="./template/${ENV_DIR}/.env"
+
+if [[ -f "${ENV}" ]]; then
+    source "${ENV}"
+else
+    echo "ERROR: ${ENV} not found"
+    exit 1
+fi
+
+# https://pve.proxmox.com/pve-docs/qm.1.html
+
+if qm list | grep -q "${TEMPLATE_VM_ID}"; then
+    read -p "WARNING: VM ${TEMPLATE_VM_ID} already exists. Destroy it including all associated disks and backup job configurations? (Y/N): " confirm
+    if [[ "${confirm}" == [yY] || "${confirm}" == [yY][eE][sS] ]]; then
+        qm stop "${TEMPLATE_VM_ID}"
+        qm destroy --purge true "${TEMPLATE_VM_ID}"
+    else
+        exit 1
+    fi
+fi
+
 wget -O "${TEMPLATE_IMAGE_NAME}" --continue "${TEMPLATE_IMAGE_URL}/${TEMPLATE_IMAGE_NAME}" && \
-    qm create "${TEMPLATE_VM_ID}" --name "${TEMPLATE_VM_NAME}" --memory "${TEMPLATE_VM_MEM}" ${TEMPLATE_VM_NETWORKING} && \
-    qm importdisk "${TEMPLATE_VM_ID}" "${TEMPLATE_IMAGE_NAME}" "${TEMPLATE_STORAGE}" && \
-    qm set "${TEMPLATE_VM_ID}" --scsihw virtio-scsi-pci --scsi0 "${TEMPLATE_STORAGE}:vm-${TEMPLATE_VM_ID}-disk-0" && \
-    qm set "${TEMPLATE_VM_ID}" --ide2 "${TEMPLATE_STORAGE}:cloudinit" && \
-    qm set "${TEMPLATE_VM_ID}" --boot c --bootdisk scsi0 && \
+    qm create "${TEMPLATE_VM_ID}" --name "${TEMPLATE_VM_NAME}" --memory "${TEMPLATE_VM_MEM}" && \
+    qm importdisk "${TEMPLATE_VM_ID}" "${TEMPLATE_IMAGE_NAME}" "${TEMPLATE_STORAGE_NAME}" && \
+    qm set "${TEMPLATE_VM_ID}" --virtio0 "${TEMPLATE_STORAGE_NAME}:vm-${TEMPLATE_VM_ID}-disk-0,media=disk,discard=on" && \
+    qm set "${TEMPLATE_VM_ID}" --ide2 "${TEMPLATE_STORAGE_NAME}:cloudinit" && \
+    qm set "${TEMPLATE_VM_ID}" --boot c --bootdisk virtio0 && \
     qm set "${TEMPLATE_VM_ID}" --serial0 socket --vga serial0 && \
     qm template "${TEMPLATE_VM_ID}" && \
     echo "TEMPLATE ${TEMPLATE_VM_NAME} successfully created!"
