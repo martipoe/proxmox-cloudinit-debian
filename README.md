@@ -104,6 +104,8 @@ export PROVISION_VM_ROOT_DISK_SIZE="10G"
 # PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID will attempt to import the data partition from the VM ID that has been created using this script
 export PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID=""
 # Ignored if PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID is set, otherwise a data disk of the specified size will be created
+export PROVISION_VM_DATA_DISK_LV="data"
+export PROVISION_VM_DATA_DISK_VG="pve"
 export PROVISION_VM_DATA_DISK_SIZE="2G"
 # Resources
 export PROVISION_VM_MEM_SIZE=2048
