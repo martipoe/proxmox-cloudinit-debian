@@ -68,7 +68,7 @@ export TEMPLATE_VM_MEM=512
 
 ```bash
 # user@local:~#
-scp -r * proxmox.lan:proxmox-cloudinit-debian/
+rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 
 # root@proxmox:~#
 cd proxmox-cloudinit-debian
@@ -118,7 +118,7 @@ export PROVISION_VM_NETWORKING="--net0 virtio,bridge=vmbr0,firewall=1,tag=4"
 
 ```bash
 # user@local:~#
-scp -r * proxmox.lan:proxmox-cloudinit-debian/
+rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 
 # root@proxmox:~#
 cd proxmox-cloudinit-debian
