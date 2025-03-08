@@ -63,8 +63,8 @@ if [[ -n "${PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID}" ]]; then
 else
     # If PROVISION_VM_DATA_DISK_SIZE is defined, create new data disk
     if [[ -n "${PROVISION_VM_DATA_DISK_SIZE}" ]]; then
-        lvcreate --name "vm-${PROVISION_VM_ID}-data-0" --virtualsize "${PROVISION_VM_DATA_DISK_SIZE}" --thinpool "${PROVISION_VM_DATA_DISK_LV}" "${PROVISION_VM_DATA_DISK_VG}"
-        qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_STORAGE_NAME}:vm-${PROVISION_VM_ID}-data-0,size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
+        lvcreate --name "vm-${PROVISION_VM_ID}-data-0" --virtualsize "${PROVISION_VM_DATA_DISK_SIZE}" --thinpool "${PROVISION_VM_DATA_STORAGE_LV}" "${PROVISION_VM_DATA_STORAGE_VG}"
+        qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-data-0,size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
     fi
 fi
 
