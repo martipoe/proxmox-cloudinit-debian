@@ -53,9 +53,7 @@ Each Template VM needs its own subdirectory in `./template/${TEMPLATE_VM_NAME}/`
 *./template/${TEMPLATE_VM_NAME}/.env*:
 ```bash
 # source for cloudinit ready Debian Image
-export TEMPLATE_IMAGE_URL="https://cloud.debian.org/images/cloud/trixie/latest/"
-# Cloudinit Image name
-export TEMPLATE_IMAGE_NAME="debian-13-generic-amd64.qcow2"
+export TEMPLATE_QCOW2_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
 # ID of the Template VM
 export TEMPLATE_VM_ID=9001
 # Name of the Template VM
