@@ -8,7 +8,9 @@ ENV_DIR=$1
 ENV="./template/${ENV_DIR}/.env"
 
 if [[ -f "${ENV}" ]]; then
+    set -a
     source "${ENV}"
+    set +a
 else
     echo "ERROR: ${ENV} not found"
     exit 1
@@ -32,7 +34,7 @@ if [[ "${QCOW2_FILENAME}" != *.qcow2 ]]; then
     exit 1
 fi
 
-wget -O "${QCOW2_FILENAME}" --continue "${TEMPLATE_QCOW2_URL}/${QCOW2_FILENAME}" && \
+wget -O "${QCOW2_FILENAME}" --continue "${TEMPLATE_QCOW2_URL}" && \
     qm create "${TEMPLATE_VM_ID}" --name "${TEMPLATE_VM_NAME}" --memory "${TEMPLATE_VM_MEM}" && \
     qm importdisk "${TEMPLATE_VM_ID}" "${QCOW2_FILENAME}" "${TEMPLATE_STORAGE_NAME}" && \
     qm set "${TEMPLATE_VM_ID}" --virtio0 "${TEMPLATE_STORAGE_NAME}:vm-${TEMPLATE_VM_ID}-disk-0,media=disk,discard=on" && \

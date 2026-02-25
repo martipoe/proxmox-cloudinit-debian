@@ -8,7 +8,9 @@ ENV_DIR=$1
 ENV="./provision/${ENV_DIR}/.env"
 
 if [[ -f "${ENV}" ]]; then
+    set -a
     source "${ENV}"
+    set +a
 else
     echo "ERROR: ${ENV} not found"
     exit 1

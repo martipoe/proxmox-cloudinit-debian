@@ -53,15 +53,15 @@ Each Template VM needs its own subdirectory in `./template/${TEMPLATE_VM_NAME}/`
 *./template/${TEMPLATE_VM_NAME}/.env*:
 ```bash
 # source for cloudinit ready Debian Image
-export TEMPLATE_QCOW2_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+TEMPLATE_QCOW2_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
 # ID of the Template VM
-export TEMPLATE_VM_ID=9001
+TEMPLATE_VM_ID=9001
 # Name of the Template VM
-export TEMPLATE_VM_NAME="template-cloudinit-debian-13-generic-amd64"
+TEMPLATE_VM_NAME="template-cloudinit-debian-13-generic-amd64"
 # Storage of the Template VM
-export TEMPLATE_STORAGE_NAME="local-lvm"
+TEMPLATE_STORAGE_NAME="local-lvm"
 # Resources
-export TEMPLATE_VM_MEM=512
+TEMPLATE_VM_MEM=512
 ```
 
 ```bash
@@ -87,30 +87,30 @@ Each VM needs its own subdirectory in `./provision/${PROVISION_VM_NAME}/` with t
 *./provision/${PROVISION_VM_NAME}/.env*:
 ```bash
 # ID from template/name/.env
-export TEMPLATE_VM_ID=9001
+TEMPLATE_VM_ID=9001
 # Storage directory used for cloudinit snippets
-export PROVISION_CLOUDINIT_STORAGE_NAME="local"
-export PROVISION_CLOUDINIT_STORAGE_PATH="/mnt/pve/local"
+PROVISION_CLOUDINIT_STORAGE_NAME="local"
+PROVISION_CLOUDINIT_STORAGE_PATH="/mnt/pve/local"
 # ID of the VM
-export PROVISION_VM_ID=9002
+PROVISION_VM_ID=9002
 # Name of the VM
-export PROVISION_VM_NAME="docker-01"
+PROVISION_VM_NAME="docker-01"
 # Storage of the VM
-export PROVISION_VM_STORAGE_NAME="local-lvm"
+PROVISION_VM_STORAGE_NAME="local-lvm"
 # Root disk size
-export PROVISION_VM_ROOT_DISK_SIZE="10G"
+PROVISION_VM_ROOT_DISK_SIZE="10G"
 # PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID will attempt to import the data partition from the VM ID that has been created using this script
-export PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID=""
+PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID=""
 # Ignored if PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID is set, otherwise a data disk of the specified size will be created
-export PROVISION_VM_DATA_STORAGE_NAME="hdd-thin"
-export PROVISION_VM_DATA_STORAGE_LV="${PROVISION_VM_DATA_STORAGE_NAME}"
-export PROVISION_VM_DATA_STORAGE_VG="${PROVISION_VM_DATA_STORAGE_NAME}"
-export PROVISION_VM_DATA_DISK_SIZE="2G"
+PROVISION_VM_DATA_STORAGE_NAME="hdd-thin"
+PROVISION_VM_DATA_STORAGE_LV="${PROVISION_VM_DATA_STORAGE_NAME}"
+PROVISION_VM_DATA_STORAGE_VG="${PROVISION_VM_DATA_STORAGE_NAME}"
+PROVISION_VM_DATA_DISK_SIZE="2G"
 # Resources
-export PROVISION_VM_MEM_SIZE=2048
-export PROVISION_VM_CORES=2
+PROVISION_VM_MEM_SIZE=2048
+PROVISION_VM_CORES=2
 # Networking
-export PROVISION_VM_NETWORKING="--net0 virtio,bridge=vmbr0,firewall=1,tag=4"
+PROVISION_VM_NETWORKING="--net0 virtio,bridge=vmbr0,firewall=1,tag=4"
 ```
 
 
