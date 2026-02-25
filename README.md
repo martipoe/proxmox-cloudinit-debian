@@ -43,7 +43,7 @@ cd proxmox-cloudinit-debian
 
 ### Create Template VM
 
-Debian provides cloudinit-ready daily image builds at https://cloud.debian.org/images/cloud/bookworm/latest/. They only have a single root partition - creating templates with a partitioning schemes requires custom installations with preseeds, not implemented here.
+Debian provides cloudinit-ready daily image builds at https://cloud.debian.org/images/cloud/trixie/latest/. They only have a single root partition - creating templates with a partitioning schemes requires custom installations with preseeds, not implemented here.
 
 The VM does not require networking, because we will not boot it.
 
@@ -53,13 +53,13 @@ Each Template VM needs its own subdirectory in `./template/${TEMPLATE_VM_NAME}/`
 *./template/${TEMPLATE_VM_NAME}/.env*:
 ```bash
 # source for cloudinit ready Debian Image
-export TEMPLATE_IMAGE_URL="https://cloud.debian.org/images/cloud/bookworm/latest/"
+export TEMPLATE_IMAGE_URL="https://cloud.debian.org/images/cloud/trixie/latest/"
 # Cloudinit Image name
-export TEMPLATE_IMAGE_NAME="debian-12-generic-amd64.qcow2"
+export TEMPLATE_IMAGE_NAME="debian-13-generic-amd64.qcow2"
 # ID of the Template VM
 export TEMPLATE_VM_ID=9001
 # Name of the Template VM
-export TEMPLATE_VM_NAME="cloudinit-template-debian-12"
+export TEMPLATE_VM_NAME="template-cloudinit-debian-13-generic-amd64"
 # Storage of the Template VM
 export TEMPLATE_STORAGE_NAME="local-lvm"
 # Resources
@@ -74,7 +74,7 @@ rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 cd proxmox-cloudinit-debian
 
 # create template vm
-bash ./1-template.sh debian-12
+bash ./1-template.sh debian-13
 ```
 
 ### Provision a VM from the Template VM

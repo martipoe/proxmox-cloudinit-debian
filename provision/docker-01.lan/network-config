@@ -1,11 +1,11 @@
-# https://reintech.io/blog/configuring-static-ip-address-debian-12
 network:
   version: 2
-  renderer: networkd
   ethernets:
     ens18:
       dhcp4: no
       addresses: [10.90.0.5/24]
-      gateway4: 10.90.0.1
       nameservers:
         addresses: [10.90.0.1]
+      routes:
+        - to: 0.0.0.0/0
+          via: 10.90.0.1

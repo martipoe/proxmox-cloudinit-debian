@@ -18,7 +18,7 @@ users:
     lock_passwd: true
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys:
-      - ssh-ed25519 YOURPUBKEY you@client
+      - ssh-ed25519 YOURPUBKEY test@example.org
 
 timezone: Europe/Berlin
 locale: de_DE.UTF-8
@@ -48,6 +48,25 @@ packages:
   - vim
   - wget
   - qemu-guest-agent
+  - nfs-common
+
+write_files:
+  - path: /etc/docker/daemon.json
+    permissions: '0644'
+    content: |
+      {
+          "data-root": "/var/lib/docker",
+          "default-address-pools": [
+              {
+                  "base": "172.16.0.0/12",
+                  "size": 24
+              }
+          ],
+          "log-driver": "local",
+          "no-new-privileges": true,
+          "firewall-backend": "nftables",
+          "registry-mirrors": []
+      }
 
 runcmd:
   # install cron without exim4
@@ -63,6 +82,11 @@ runcmd:
   # reduce swappiness
   - sysctl vm.swappiness=1
   - echo "vm.swappiness=1" >> /etc/sysctl.d/local.conf
+  # enable ipv6/ipv4 forwarding for docker nftables support https://docs.docker.com/engine/network/firewall-nftables/#ip-forwarding
+  - sysctl net.ipv4.ip_forward=1
+  - sysctl net.ipv6.conf.all.forwarding=1
+  - echo "net.ipv4.ip_forward=1" >> /etc/sysctl.d/99-docker.conf
+  - echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.d/99-docker.conf
   # install docker compose
   - curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
   - chmod a+r /etc/apt/keyrings/docker.asc
@@ -74,20 +98,14 @@ runcmd:
 # prepare /dev/vdb with two partitions: https://cloudinit.readthedocs.io/en/latest/reference/modules.html#disk-setup
 disk_setup:
   /dev/vdb:
-    layout: [95,5]
+    layout: true
     overwrite: false  # Device will be checked for a partition table and for a file system and if either is found, the operation will be skipped.
     table_type: gpt
 
 fs_setup:
   - {
       cmd: mkfs -t %(filesystem)s -L %(label)s %(device)s,
-      device: /dev/vdb1,
-      filesystem: ext4,
-      label: var-lib-docker,
-    }
-  - {
-      cmd: mkfs -t %(filesystem)s -L %(label)s %(device)s,
-      device: /dev/vdb2,
+      device: /dev/vdb,
       filesystem: ext4,
       label: opt,
     }
@@ -95,12 +113,11 @@ fs_setup:
 mounts:
   - [tmpfs, /dev/shm, tmpfs, "defaults,nosuid,nodev,noexec", "0", "0"]
   - [tmpfs, /tmp, tmpfs, "defaults,nosuid,nodev,noexec", "0", "0"]
-  - [/dev/vdb1, /var/lib/docker, ext4, "defaults,nofail", "0", "0"]
-  - [/dev/vdb2, /opt, ext4, "defaults,nofail", "0", "0"]
+  - [/dev/vdb, /opt, ext4, "defaults,nofail", "0", "0"]
 
 # https://cloudinit.readthedocs.io/en/latest/reference/modules.html#growpart
 growpart:
-  devices: [/, /dev/vdb1, /dev/vdb2]
+  devices: [/, /dev/vdb]
   mode: growpart
 
 swap:
