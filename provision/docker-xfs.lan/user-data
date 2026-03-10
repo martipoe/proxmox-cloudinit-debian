@@ -4,9 +4,9 @@
 disable_root: true
 ssh_pwauth: false
 
-hostname: docker-01
+hostname: docker-xfs
 create_hostname_file: true
-fqdn: docker01.lan
+fqdn: docker-xfs.lan
 
 users:
   - name: root
@@ -48,14 +48,14 @@ packages:
   - vim
   - wget
   - qemu-guest-agent
-  - nfs-common
+  - xfsprogs
 
 write_files:
   - path: /etc/docker/daemon.json
     permissions: '0644'
     content: |
       {
-          "data-root": "/var/lib/docker",
+          "data-root": "/opt/docker-data",
           "default-address-pools": [
               {
                   "base": "172.16.0.0/12",
@@ -75,7 +75,7 @@ runcmd:
   - apt purge -y debsecan telnet rpcbind inetutils-telnet
   # harden ssh
   - echo 'PermitRootLogin no' > /etc/ssh/sshd_config.d/0-custom.conf
-  - echo 'PasswordAuthentication no' > /etc/ssh/sshd_config.d/0-custom.conf
+  - echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config.d/0-custom.conf
   - systemctl reload ssh
   # disable cloudinit on subsequent boots https://cloudinit.readthedocs.io/en/latest/howto/disable_cloud_init.html
   - touch /etc/cloud/cloud-init.disabled
@@ -87,6 +87,10 @@ runcmd:
   - sysctl net.ipv6.conf.all.forwarding=1
   - echo "net.ipv4.ip_forward=1" >> /etc/sysctl.d/99-docker.conf
   - echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.d/99-docker.conf
+  # fs_setup is not possible as xfsprogs are not pre-installed in the Debian cloudinit image, so we create the filesystem in runcmd after installing xfsprogs
+  # create filesystem for /opt once xfsprogs are installed
+  - blkid /dev/vdb || mkfs -t xfs -n ftype=1 -L opt /dev/vdb
+  - mount -a
   # install docker compose
   - curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
   - chmod a+r /etc/apt/keyrings/docker.asc
@@ -95,25 +99,11 @@ runcmd:
   # add user deploy to docker group
   - usermod -aG docker deploy
 
-# prepare /dev/vdb with two partitions: https://cloudinit.readthedocs.io/en/latest/reference/modules.html#disk-setup
-disk_setup:
-  /dev/vdb:
-    layout: true
-    overwrite: false  # Device will be checked for a partition table and for a file system and if either is found, the operation will be skipped.
-    table_type: gpt
-
-fs_setup:
-  - {
-      cmd: mkfs -t %(filesystem)s -L %(label)s %(device)s,
-      device: /dev/vdb,
-      filesystem: ext4,
-      label: opt,
-    }
 
 mounts:
   - [tmpfs, /dev/shm, tmpfs, "defaults,nosuid,nodev,noexec", "0", "0"]
   - [tmpfs, /tmp, tmpfs, "defaults,nosuid,nodev,noexec", "0", "0"]
-  - [/dev/vdb, /opt, ext4, "defaults,nofail", "0", "0"]
+  - [/dev/vdb, /opt, xfs, "defaults,nofail", "0", "0"]
 
 # https://cloudinit.readthedocs.io/en/latest/reference/modules.html#growpart
 growpart:

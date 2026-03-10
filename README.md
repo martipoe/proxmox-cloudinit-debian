@@ -122,7 +122,7 @@ rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 cd proxmox-cloudinit-debian
 
 # provision from template vm
-bash ./2-provision.sh docker-01
+bash ./2-provision.sh docker-xfs.lan
 ```
 
 ## Inspired by

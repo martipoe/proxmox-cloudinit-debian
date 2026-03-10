@@ -3,7 +3,7 @@ network:
   ethernets:
     ens18:
       dhcp4: no
-      addresses: [10.90.0.5/24]
+      addresses: [10.90.0.7/24]
       nameservers:
         addresses: [10.90.0.1]
       routes:

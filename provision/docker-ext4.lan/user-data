@@ -1,0 +1,128 @@
+#cloud-config
+
+# warning - see https://github.com/canonical/cloud-init/issues/5931
+disable_root: true
+ssh_pwauth: false
+
+hostname: docker-ext4
+create_hostname_file: true
+fqdn: docker-ext4.lan
+
+users:
+  - name: root
+    lock_passwd: true
+  - name: deploy
+    uid: 1000
+    groups: sudo, adm
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ssh-ed25519 YOURPUBKEY test@example.org
+
+timezone: Europe/Berlin
+locale: de_DE.UTF-8
+bootcmd:
+  - cloud-init-per once setlocales sed -i '/de_DE.UTF-8/s/^# //g' /etc/locale.gen
+
+# https://stackoverflow.com/questions/67741343/azure-cloud-init-failed-to-install-packages
+apt:
+  preserve_sources_list: true
+  conf: |
+    Acquire::Retries "60";
+    DPkg::Lock::Timeout "60";
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+packages:
+  - acl
+  - apt-transport-https
+  - curl
+  - gnupg
+  - htop
+  - needrestart
+  - rsync
+  - sudo
+  - systemd-timesyncd
+  - unzip
+  - vim
+  - wget
+  - qemu-guest-agent
+
+write_files:
+  - path: /etc/docker/daemon.json
+    permissions: '0644'
+    content: |
+      {
+          "data-root": "/opt/docker-data",
+          "default-address-pools": [
+              {
+                  "base": "172.16.0.0/12",
+                  "size": 24
+              }
+          ],
+          "log-driver": "local",
+          "no-new-privileges": true,
+          "firewall-backend": "nftables",
+          "registry-mirrors": []
+      }
+
+runcmd:
+  # install cron without exim4
+  - apt install --no-install-recommends -y cron
+  # remove unneeded packages
+  - apt purge -y debsecan telnet rpcbind inetutils-telnet
+  # harden ssh
+  - echo 'PermitRootLogin no' > /etc/ssh/sshd_config.d/0-custom.conf
+  - echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config.d/0-custom.conf
+  - systemctl reload ssh
+  # disable cloudinit on subsequent boots https://cloudinit.readthedocs.io/en/latest/howto/disable_cloud_init.html
+  - touch /etc/cloud/cloud-init.disabled
+  # reduce swappiness
+  - sysctl vm.swappiness=1
+  - echo "vm.swappiness=1" >> /etc/sysctl.d/local.conf
+  # enable ipv6/ipv4 forwarding for docker nftables support https://docs.docker.com/engine/network/firewall-nftables/#ip-forwarding
+  - sysctl net.ipv4.ip_forward=1
+  - sysctl net.ipv6.conf.all.forwarding=1
+  - echo "net.ipv4.ip_forward=1" >> /etc/sysctl.d/99-docker.conf
+  - echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.d/99-docker.conf
+  # install docker compose
+  - curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+  - apt update && apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  # add user deploy to docker group
+  - usermod -aG docker deploy
+
+# prepare /dev/vdb: https://cloudinit.readthedocs.io/en/latest/reference/modules.html#disk-setup
+disk_setup:
+  /dev/vdb:
+    layout: true
+    overwrite: false  # Device will be checked for a partition table and for a file system and if either is found, the operation will be skipped.
+    table_type: gpt
+
+fs_setup:
+  - {
+      cmd: mkfs -t %(filesystem)s -L %(label)s %(device)s,
+      device: /dev/vdb,
+      filesystem: ext4,
+      label: opt,
+    }
+
+mounts:
+  - [tmpfs, /dev/shm, tmpfs, "defaults,nosuid,nodev,noexec", "0", "0"]
+  - [tmpfs, /tmp, tmpfs, "defaults,nosuid,nodev,noexec", "0", "0"]
+  - [/dev/vdb, /opt, ext4, "defaults,nofail", "0", "0"]
+
+# https://cloudinit.readthedocs.io/en/latest/reference/modules.html#growpart
+growpart:
+  devices: [/, /dev/vdb]
+  mode: growpart
+
+swap:
+  filename: /swap.img
+  size: 3G
+  maxsize: 3G
+
+# validate: cloud-init schema -c user-data
+# log on provisioned VM: /var/log/cloud-init-output.log
