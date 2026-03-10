@@ -65,19 +65,16 @@ TEMPLATE_VM_MEM=512
 ```
 
 ```bash
-# user@local:~#
+# sync repository
 rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 
-# root@proxmox:~#
-cd proxmox-cloudinit-debian
-
-# create template vm
-bash ./1-template.sh debian-13
+# create template VM
+ssh proxmox.lan "cd proxmox-cloudinit-debian && /bin/bash ./1-template.sh debian-13"
 ```
 
 ### Provision a VM from the Template VM
 
-Configs and .env for the provisioned VM in *./provision/docker-01* are exemplary.
+Configs and .env for the provisioned VM in *./provision/docker-xfs* are exemplary.
 
 Each VM needs its own subdirectory in `./provision/${PROVISION_VM_NAME}/` with these files:
 - .env
@@ -90,39 +87,36 @@ Each VM needs its own subdirectory in `./provision/${PROVISION_VM_NAME}/` with t
 TEMPLATE_VM_ID=9001
 # Storage directory used for cloudinit snippets
 PROVISION_CLOUDINIT_STORAGE_NAME="local"
-PROVISION_CLOUDINIT_STORAGE_PATH="/mnt/pve/local"
+PROVISION_CLOUDINIT_STORAGE_PATH="/var/lib/vz"
 # ID of the VM
-PROVISION_VM_ID=9002
+PROVISION_VM_ID=102
 # Name of the VM
-PROVISION_VM_NAME="docker-01"
+PROVISION_VM_NAME="docker-xfs.lan"
 # Storage of the VM
 PROVISION_VM_STORAGE_NAME="local-lvm"
 # Root disk size
-PROVISION_VM_ROOT_DISK_SIZE="10G"
+PROVISION_VM_ROOT_DISK_SIZE="8G"
 # PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID will attempt to import the data partition from the VM ID that has been created using this script
 PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID=""
 # Ignored if PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID is set, otherwise a data disk of the specified size will be created
+PROVISION_VM_DATA_DISK_SIZE="16G"
 PROVISION_VM_DATA_STORAGE_NAME="hdd-thin"
 PROVISION_VM_DATA_STORAGE_LV="${PROVISION_VM_DATA_STORAGE_NAME}"
 PROVISION_VM_DATA_STORAGE_VG="${PROVISION_VM_DATA_STORAGE_NAME}"
-PROVISION_VM_DATA_DISK_SIZE="2G"
 # Resources
-PROVISION_VM_MEM_SIZE=2048
-PROVISION_VM_CORES=2
-# Networking
+PROVISION_VM_MEM_SIZE=4096
+PROVISION_VM_CORES=4
+# Networking with VLAN TAG '4'
 PROVISION_VM_NETWORKING="--net0 virtio,bridge=vmbr0,firewall=1,tag=4"
 ```
 
 
 ```bash
-# user@local:~#
+# sync repository
 rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 
-# root@proxmox:~#
-cd proxmox-cloudinit-debian
-
-# provision from template vm
-bash ./2-provision.sh docker-xfs.lan
+# create template VM
+ssh proxmox.lan "cd proxmox-cloudinit-debian && /bin/bash ./2-provision.sh docker-xfs.lan"
 ```
 
 ## Inspired by
