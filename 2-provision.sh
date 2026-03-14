@@ -54,20 +54,9 @@ qm clone "${TEMPLATE_VM_ID}" "${PROVISION_VM_ID}" --name "${PROVISION_VM_NAME}" 
 
 
 # Data disk handling
-PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID=${PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID:=}
-# If PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID is defined, ask for permission to migrate the data disk. Ignores PROVISION_VM_DATA_DISK_SIZE.
-if [[ -n "${PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID}" ]]; then
-    read -p "WARNING: Migrate data disk from VM ${PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID} to this VM? This will stop the source VM. (Y/N): " confirm
-    if [[ "${confirm}" == [yY] || "${confirm}" == [yY][eE][sS] ]]; then
-        qm stop "${PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID}"
-        qm move-disk "${PROVISION_VM_DATA_DISK_MIGRATE_FROM_ID}" virtio1 --target-vmid "${PROVISION_VM_ID}" --target-disk virtio1
-    fi
-else
-    # If PROVISION_VM_DATA_DISK_SIZE is defined, create new data disk
-    if [[ -n "${PROVISION_VM_DATA_DISK_SIZE}" ]]; then
-        pvesm alloc "${PROVISION_VM_DATA_STORAGE_NAME}" "${PROVISION_VM_ID}" "vm-${PROVISION_VM_ID}-data-0" "${PROVISION_VM_DATA_DISK_SIZE}"
-        qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-data-0,size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
-    fi
+if [[ -n "${PROVISION_VM_DATA_DISK_SIZE}" ]]; then
+    pvesm alloc "${PROVISION_VM_DATA_STORAGE_NAME}" "${PROVISION_VM_ID}" "vm-${PROVISION_VM_ID}-data-0" "${PROVISION_VM_DATA_DISK_SIZE}"
+    qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-data-0,size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
 fi
 
 qm start "${PROVISION_VM_ID}" && echo "VM ${PROVISION_VM_NAME} successfully created!"
