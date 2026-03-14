@@ -74,7 +74,7 @@ ssh proxmox.lan "cd proxmox-cloudinit-debian && /bin/bash ./1-template.sh debian
 
 ### Provision a VM from the Template VM
 
-Configs and .env for the provisioned VM in *./provision/docker-xfs* are exemplary.
+Configs and .env for the provisioned VM in *./provision/docker-*.lan* are exemplary.
 
 Each VM needs its own subdirectory in `./provision/${PROVISION_VM_NAME}/` with these files:
 - .env
@@ -95,7 +95,7 @@ PROVISION_VM_NAME="docker-xfs.lan"
 # Storage of the VM
 PROVISION_VM_STORAGE_NAME="local-lvm"
 PROVISION_VM_ROOT_DISK_SIZE="8G"
-# Retain data disk when VM is recreated and reattach it afterwards
+# Retain data disk when VM is recreated
 PROVISION_VM_DATA_DISK_PERSISTENCE="true"
 PROVISION_VM_DATA_STORAGE_NAME="hdd-thin"
 PROVISION_VM_DATA_DISK_NAME="data"
@@ -107,12 +107,17 @@ PROVISION_VM_CORES=4
 PROVISION_VM_NETWORKING="--net0 virtio,bridge=vmbr0,firewall=1,tag=4"
 ```
 
+Provisioning behavior:
+1. If the target VM already exists, the script asks for confirmation before stopping and destroying it.
+2. If `PROVISION_VM_DATA_DISK_PERSISTENCE="true"`, the data disk is detached and unreferenced before VM destruction and then reattached after the VM is recreated.
+3. If persistence is enabled but the expected data disk cannot be found in `PROVISION_VM_DATA_STORAGE_NAME`, the script asks whether a new disk should be created instead.
+4. If persistence is disabled, a new data disk is created during provisioning.
 
 ```bash
 # sync repository
 rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 
-# create template VM
+# provision VM
 ssh proxmox.lan "cd proxmox-cloudinit-debian && /bin/bash ./2-provision.sh docker-xfs.lan"
 ```
 
