@@ -16,15 +16,15 @@ else
     exit 1
 fi
 
-CLOUDINIT="./provision/${PROVISION_VM_NAME}/user-data"
-if [[ ! -f "${CLOUDINIT}" ]]; then
-    echo "ERROR: ${CLOUDINIT} not found"
+CLOUDINIT_USER_DATA="./provision/${PROVISION_VM_NAME}/user-data"
+if [[ ! -f "${CLOUDINIT_USER_DATA}" ]]; then
+    echo "ERROR: ${CLOUDINIT_USER_DATA} not found"
     exit 1
 fi
 
-NETPLAN="./provision/${PROVISION_VM_NAME}/network-config"
-if [[ ! -f "${NETPLAN}" ]]; then
-    echo "ERROR: ${NETPLAN} not found"
+CLOUDINIT_NETWORK_CONFIG="./provision/${PROVISION_VM_NAME}/network-config"
+if [[ ! -f "${CLOUDINIT_NETWORK_CONFIG}" ]]; then
+    echo "ERROR: ${CLOUDINIT_NETWORK_CONFIG} not found"
     exit 1
 fi
 
@@ -47,8 +47,8 @@ fi
 
 # Copy cloudinit user and network configuration to snippets directory in Proxmox storage
 mkdir -p "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}/" && \
-    cp "${CLOUDINIT}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-user-data" && \
-    cp "${NETPLAN}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-network-config"
+    cp "${CLOUDINIT_USER_DATA}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-user-data" && \
+    cp "${CLOUDINIT_NETWORK_CONFIG}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-network-config"
 
 
 # Create full clone from template VM: https://www.reddit.com/r/Proxmox/comments/18dp3h6/should_i_use_linked_clones/
