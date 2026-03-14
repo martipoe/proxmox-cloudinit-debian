@@ -29,10 +29,17 @@ if [[ ! -f "${NETPLAN}" ]]; then
 fi
 
 if qm list | grep -q "${PROVISION_VM_ID}"; then
+    if [[ "${PROVISION_VM_DATA_DISK_PERSISTENCE}" == "true" ]]; then
+        # unattach data disk
+        qm set "${PROVISION_VM_ID}" -delete virtio1
+        # remove from /etc/pve/qemu-server/ so it becomes unreferenced and cannot be deleted via qm destroy --purge
+        sed -i "/unused0: ${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}\$/d" "/etc/pve/qemu-server/${PROVISION_VM_ID}.conf"
+    fi
+
     read -p "WARNING: VM ${PROVISION_VM_ID} already exists. Destroy it including all associated disks and backup job configurations? (Y/N): " confirm
     if [[ "${confirm}" == [yY] || "${confirm}" == [yY][eE][sS] ]]; then
         qm stop "${PROVISION_VM_ID}"
-        qm destroy --purge true "${PROVISION_VM_ID}"
+        qm destroy --purge true --destroy-unreferenced false "${PROVISION_VM_ID}"
     else
         exit 1
     fi
@@ -55,8 +62,25 @@ qm clone "${TEMPLATE_VM_ID}" "${PROVISION_VM_ID}" --name "${PROVISION_VM_NAME}" 
 
 # Data disk handling
 if [[ -n "${PROVISION_VM_DATA_DISK_SIZE}" ]]; then
-    pvesm alloc "${PROVISION_VM_DATA_STORAGE_NAME}" "${PROVISION_VM_ID}" "vm-${PROVISION_VM_ID}-data-0" "${PROVISION_VM_DATA_DISK_SIZE}"
-    qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-data-0,size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
+    if [[ "${PROVISION_VM_DATA_DISK_PERSISTENCE}" == "true" ]]; then
+        if pvesm list "${PROVISION_VM_DATA_STORAGE_NAME}" | grep -w -q "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}"; then
+            qm rescan --vmid "${PROVISION_VM_ID}" && \
+            qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME},size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
+        else
+            read -p "ERROR: Data disk vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME} not found in storage ${PROVISION_VM_DATA_STORAGE_NAME}. Do you want to create a new data disk instead? (Y/N): " recreate_confirm
+            if [[ "${recreate_confirm}" == [yY] || "${recreate_confirm}" == [yY][eE][sS] ]]; then
+                CREATE_DISK=true
+            else
+                echo "Aborting: persistence was requested, but no existing data disk was found."
+                exit 1
+            fi
+        fi
+    fi
+
+    if [[ "${PROVISION_VM_DATA_DISK_PERSISTENCE}" == "false" || "${CREATE_DISK:-}" == "true" ]]; then
+        pvesm alloc "${PROVISION_VM_DATA_STORAGE_NAME}" "${PROVISION_VM_ID}" "vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}" "${PROVISION_VM_DATA_DISK_SIZE}"
+        qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME},size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
+    fi
 fi
 
 qm start "${PROVISION_VM_ID}" && echo "VM ${PROVISION_VM_NAME} successfully created!"

@@ -95,7 +95,10 @@ PROVISION_VM_NAME="docker-xfs.lan"
 # Storage of the VM
 PROVISION_VM_STORAGE_NAME="local-lvm"
 PROVISION_VM_ROOT_DISK_SIZE="8G"
+# Retain data disk when VM is recreated and reattach it afterwards
+PROVISION_VM_DATA_DISK_PERSISTENCE="true"
 PROVISION_VM_DATA_STORAGE_NAME="hdd-thin"
+PROVISION_VM_DATA_DISK_NAME="data"
 PROVISION_VM_DATA_DISK_SIZE="16G"
 # Resources
 PROVISION_VM_MEM_SIZE=4096
