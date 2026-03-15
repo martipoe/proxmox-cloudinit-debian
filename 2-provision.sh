@@ -28,10 +28,12 @@ fi
 
 # Check if VM with same ID already exists and prompt for destruction if it does (with special handling to preserve data disk if persistence is enabled)
 if qm list | grep -q "${PROVISION_VM_ID}"; then
-    read -p "WARNING: VM ${PROVISION_VM_ID} already exists. Destroy it including all associated disks and backup job configurations? (Y/N): " confirm_purge
+    echo "WARNING: VM ${PROVISION_VM_ID} already exists:"
+    qm config "${PROVISION_VM_ID}"
+    read -p "Destroy it including all associated disks and backup job configurations? (Y/N): " confirm_purge
     if [[ "${confirm_purge}" == [yY] || "${confirm_purge}" == [yY][eE][sS] ]]; then
         if [[ "${PROVISION_VM_DATA_DISK_PERSISTENCE}" == "true" ]]; then
-            echo "Persistence for data disk is enabled. Attempting to unattach and unreference existing data disk to preserve it before destroying VM."
+            echo "Persistence for data disk ${PROVISION_VM_DATA_DISK_NAME} is enabled. Attempting to unattach and unreference existing data disk to preserve it before destroying VM."
             qm set "${PROVISION_VM_ID}" -delete virtio1
             # remove from /etc/pve/qemu-server/ so it becomes unreferenced and cannot be deleted via qm destroy --purge
             sed -i "/unused0: ${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}\$/d" "/etc/pve/qemu-server/${PROVISION_VM_ID}.conf"
