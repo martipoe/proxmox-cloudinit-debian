@@ -26,9 +26,16 @@ if [[ ! -f "${CLOUDINIT_NETWORK_CONFIG}" ]]; then
     exit 1
 fi
 
-# Check if VM with same ID already exists and prompt for destruction if it does (with special handling to preserve data disk if persistence is enabled)
-if qm list | grep -q "${PROVISION_VM_ID}"; then
-    echo "WARNING: VM ${PROVISION_VM_ID} already exists:"
+# Check whether requested VM ID already exists.
+# Only allow reprovision if the existing VM name matches PROVISION_VM_NAME.
+if qm status "${PROVISION_VM_ID}" >/dev/null 2>&1; then
+    existing_vm_name=$(qm config "${PROVISION_VM_ID}" | grep -oP '^name: \K.*')
+    if [[ "${existing_vm_name}" != "${PROVISION_VM_NAME}" ]]; then
+        echo "ERROR: VM ID ${PROVISION_VM_ID} is already used by '${existing_vm_name:-<unknown>}', not '${PROVISION_VM_NAME}'. Choose a different PROVISION_VM_ID or target the existing VM name."
+        exit 1
+    fi
+
+    echo "WARNING: VM ${PROVISION_VM_ID} with name '${PROVISION_VM_NAME}' already exists:"
     qm config "${PROVISION_VM_ID}"
     read -p "Destroy it including all associated disks and backup job configurations? (Y/N): " confirm_purge
     if [[ "${confirm_purge}" == [yY] || "${confirm_purge}" == [yY][eE][sS] ]]; then
