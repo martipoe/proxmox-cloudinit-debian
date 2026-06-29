@@ -4,13 +4,13 @@
 
 set -euxo pipefail
 
-ENV_FILE="./template/$1/.env"
-if [[ -f "${ENV_FILE}" ]]; then
+env_file="./template/$1/.env"
+if [[ -f "${env_file}" ]]; then
     set -a
-    source "${ENV_FILE}"
+    source "${env_file}"
     set +a
 else
-    echo "ERROR: ${ENV_FILE} not found"
+    echo "ERROR: ${env_file} not found"
     exit 1
 fi
 
@@ -26,20 +26,20 @@ if qm list | grep -q "${TEMPLATE_VM_ID}"; then
     fi
 fi
 
-QCOW2_FILENAME=$(basename "${TEMPLATE_QCOW2_URL}")
-QCOW2_SHA512SUMS=$(basename "${TEMPLATE_QCOW2_CHECKSUMS_URL}")
+qcow2_filename=$(basename "${TEMPLATE_QCOW2_URL}")
+qcow2_sha512sums=$(basename "${TEMPLATE_QCOW2_CHECKSUMS_URL}")
 
-if [[ "${QCOW2_FILENAME}" != *.qcow2 ]]; then
-    echo "ERROR: ${QCOW2_FILENAME} is not a .qcow2 file"
+if [[ "${qcow2_filename}" != *.qcow2 ]]; then
+    echo "ERROR: ${qcow2_filename} is not a .qcow2 file"
     exit 1
 fi
 
 wget --timestamping "${TEMPLATE_QCOW2_URL}" && \
     wget "${TEMPLATE_QCOW2_CHECKSUMS_URL}" && \
-    sha512sum -c <(grep "${QCOW2_FILENAME}" ${QCOW2_SHA512SUMS})
+    sha512sum -c <(grep "${qcow2_filename}" ${qcow2_sha512sums})
 
 qm create "${TEMPLATE_VM_ID}" --name "${TEMPLATE_VM_NAME}" --memory "${TEMPLATE_VM_MEM}" && \
-    qm importdisk "${TEMPLATE_VM_ID}" "${QCOW2_FILENAME}" "${TEMPLATE_STORAGE_NAME}" && \
+    qm importdisk "${TEMPLATE_VM_ID}" "${qcow2_filename}" "${TEMPLATE_STORAGE_NAME}" && \
     qm set "${TEMPLATE_VM_ID}" --virtio0 "${TEMPLATE_STORAGE_NAME}:vm-${TEMPLATE_VM_ID}-disk-0,media=disk,discard=on" && \
     qm set "${TEMPLATE_VM_ID}" --ide2 "${TEMPLATE_STORAGE_NAME}:cloudinit" && \
     qm set "${TEMPLATE_VM_ID}" --boot c --bootdisk virtio0 && \

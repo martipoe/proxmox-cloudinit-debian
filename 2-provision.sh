@@ -4,25 +4,25 @@
 
 set -euxo pipefail
 
-ENV_FILE="./provision/$1/.env"
-if [[ -f "${ENV_FILE}" ]]; then
+env_file="./provision/$1/.env"
+if [[ -f "${env_file}" ]]; then
     set -a
-    source "${ENV_FILE}"
+    source "${env_file}"
     set +a
 else
-    echo "ERROR: ${ENV_FILE} not found"
+    echo "ERROR: ${env_file} not found"
     exit 1
 fi
 
-CLOUDINIT_USER_DATA="./provision/${PROVISION_VM_NAME}/user-data"
-if [[ ! -f "${CLOUDINIT_USER_DATA}" ]]; then
-    echo "ERROR: ${CLOUDINIT_USER_DATA} not found"
+cloudinit_user_data="./provision/${PROVISION_VM_NAME}/user-data"
+if [[ ! -f "${cloudinit_user_data}" ]]; then
+    echo "ERROR: ${cloudinit_user_data} not found"
     exit 1
 fi
 
-CLOUDINIT_NETWORK_CONFIG="./provision/${PROVISION_VM_NAME}/network-config"
-if [[ ! -f "${CLOUDINIT_NETWORK_CONFIG}" ]]; then
-    echo "ERROR: ${CLOUDINIT_NETWORK_CONFIG} not found"
+cloudinit_network_config="./provision/${PROVISION_VM_NAME}/network-config"
+if [[ ! -f "${cloudinit_network_config}" ]]; then
+    echo "ERROR: ${cloudinit_network_config} not found"
     exit 1
 fi
 
@@ -47,17 +47,17 @@ if qm status "${PROVISION_VM_ID}" >/dev/null 2>&1; then
         qm set "${PROVISION_VM_ID}" -delete virtio1
         # remove from /etc/pve/qemu-server/ so it becomes unreferenced and cannot be deleted via qm destroy --purge
         sed -i "/unused0: ${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}\$/d" "/etc/pve/qemu-server/${PROVISION_VM_ID}.conf"
-        DESTROY_UNREFERENCED_DISKS="false"
+        destroy_unreferenced_disks="false"
     fi
 
     qm stop "${PROVISION_VM_ID}"
-    qm destroy --purge true --destroy-unreferenced-disks "${DESTROY_UNREFERENCED_DISKS:-true}" "${PROVISION_VM_ID}"
+    qm destroy --purge true --destroy-unreferenced-disks "${destroy_unreferenced_disks:-true}" "${PROVISION_VM_ID}"
 fi
 
 # Copy cloudinit user and network configuration to snippets directory in Proxmox storage
 mkdir -p "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}/" && \
-    cp "${CLOUDINIT_USER_DATA}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-user-data" && \
-    cp "${CLOUDINIT_NETWORK_CONFIG}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-network-config"
+    cp "${cloudinit_user_data}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-user-data" && \
+    cp "${cloudinit_network_config}" "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}-network-config"
 
 # Create full clone from template VM (https://www.reddit.com/r/Proxmox/comments/18dp3h6/should_i_use_linked_clones/),
 # resize root disk, configure resources and mount cloudinit snippet.
