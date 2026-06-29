@@ -27,8 +27,8 @@ if [[ ! -f "${CLOUDINIT_NETWORK_CONFIG}" ]]; then
 fi
 
 # Check whether requested VM ID already exists.
-# Only allow reprovision if the existing VM name matches PROVISION_VM_NAME.
 if qm status "${PROVISION_VM_ID}" >/dev/null 2>&1; then
+
     existing_vm_name=$(qm config "${PROVISION_VM_ID}" | grep -oP '^name: \K.*')
     if [[ "${existing_vm_name}" != "${PROVISION_VM_NAME}" ]]; then
         echo "ERROR: VM ID ${PROVISION_VM_ID} is already used by '${existing_vm_name:-<unknown>}', not '${PROVISION_VM_NAME}'. Choose a different PROVISION_VM_ID or target the existing VM name."
@@ -38,18 +38,20 @@ if qm status "${PROVISION_VM_ID}" >/dev/null 2>&1; then
     echo "WARNING: VM ${PROVISION_VM_ID} with name '${PROVISION_VM_NAME}' already exists:"
     qm config "${PROVISION_VM_ID}"
     read -p "Destroy it including all associated disks and backup job configurations? (Y/N): " confirm_purge
-    if [[ "${confirm_purge}" == [yY] || "${confirm_purge}" == [yY][eE][sS] ]]; then
-        if [[ "${PROVISION_VM_DATA_DISK_PERSISTENCE}" == "true" ]]; then
-            echo "Persistence for data disk ${PROVISION_VM_DATA_DISK_NAME} is enabled. Attempting to unattach and unreference existing data disk to preserve it before destroying VM."
-            qm set "${PROVISION_VM_ID}" -delete virtio1
-            # remove from /etc/pve/qemu-server/ so it becomes unreferenced and cannot be deleted via qm destroy --purge
-            sed -i "/unused0: ${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}\$/d" "/etc/pve/qemu-server/${PROVISION_VM_ID}.conf"
-        fi
-        qm stop "${PROVISION_VM_ID}"
-        qm destroy --purge true --destroy-unreferenced false "${PROVISION_VM_ID}"
-    else
+    if [[ ! "${confirm_purge}" =~ ^([yY]|[yY][eE][sS])$ ]]; then
         exit 1
     fi
+
+    if [[ "${PROVISION_VM_DATA_DISK_PERSISTENCE}" == "true" ]]; then
+        echo "Persistence for data disk ${PROVISION_VM_DATA_DISK_NAME} is enabled. Attempting to unattach and unreference existing data disk to preserve it before destroying VM."
+        qm set "${PROVISION_VM_ID}" -delete virtio1
+        # remove from /etc/pve/qemu-server/ so it becomes unreferenced and cannot be deleted via qm destroy --purge
+        sed -i "/unused0: ${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}\$/d" "/etc/pve/qemu-server/${PROVISION_VM_ID}.conf"
+        DESTROY_UNREFERENCED_DISKS="false"
+    fi
+
+    qm stop "${PROVISION_VM_ID}"
+    qm destroy --purge true --destroy-unreferenced-disks "${DESTROY_UNREFERENCED_DISKS:-true}" "${PROVISION_VM_ID}"
 fi
 
 # Copy cloudinit user and network configuration to snippets directory in Proxmox storage
