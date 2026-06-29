@@ -4,15 +4,13 @@
 
 set -euxo pipefail
 
-ENV_DIR=$1
-ENV="./template/${ENV_DIR}/.env"
-
-if [[ -f "${ENV}" ]]; then
+ENV_FILE="./template/$1/.env"
+if [[ -f "${ENV_FILE}" ]]; then
     set -a
-    source "${ENV}"
+    source "${ENV_FILE}"
     set +a
 else
-    echo "ERROR: ${ENV} not found"
+    echo "ERROR: ${ENV_FILE} not found"
     exit 1
 fi
 
