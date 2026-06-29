@@ -29,13 +29,18 @@ if qm list | grep -q "${TEMPLATE_VM_ID}"; then
 fi
 
 QCOW2_FILENAME=$(basename "${TEMPLATE_QCOW2_URL}")
+QCOW2_SHA512SUMS=$(basename "${TEMPLATE_QCOW2_CHECKSUMS_URL}")
+
 if [[ "${QCOW2_FILENAME}" != *.qcow2 ]]; then
     echo "ERROR: ${QCOW2_FILENAME} is not a .qcow2 file"
     exit 1
 fi
 
-wget -O "${QCOW2_FILENAME}" "${TEMPLATE_QCOW2_URL}" && \
-    qm create "${TEMPLATE_VM_ID}" --name "${TEMPLATE_VM_NAME}" --memory "${TEMPLATE_VM_MEM}" && \
+wget --timestamping "${TEMPLATE_QCOW2_URL}" && \
+    wget "${TEMPLATE_QCOW2_CHECKSUMS_URL}" && \
+    sha512sum -c <(grep "${QCOW2_FILENAME}" ${QCOW2_SHA512SUMS})
+
+qm create "${TEMPLATE_VM_ID}" --name "${TEMPLATE_VM_NAME}" --memory "${TEMPLATE_VM_MEM}" && \
     qm importdisk "${TEMPLATE_VM_ID}" "${QCOW2_FILENAME}" "${TEMPLATE_STORAGE_NAME}" && \
     qm set "${TEMPLATE_VM_ID}" --virtio0 "${TEMPLATE_STORAGE_NAME}:vm-${TEMPLATE_VM_ID}-disk-0,media=disk,discard=on" && \
     qm set "${TEMPLATE_VM_ID}" --ide2 "${TEMPLATE_STORAGE_NAME}:cloudinit" && \
