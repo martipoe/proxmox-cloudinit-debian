@@ -34,7 +34,7 @@ if [[ "${QCOW2_FILENAME}" != *.qcow2 ]]; then
     exit 1
 fi
 
-wget --timestamping -O "${QCOW2_FILENAME}" "${TEMPLATE_QCOW2_URL}" && \
+wget -O "${QCOW2_FILENAME}" "${TEMPLATE_QCOW2_URL}" && \
     qm create "${TEMPLATE_VM_ID}" --name "${TEMPLATE_VM_NAME}" --memory "${TEMPLATE_VM_MEM}" && \
     qm importdisk "${TEMPLATE_VM_ID}" "${QCOW2_FILENAME}" "${TEMPLATE_STORAGE_NAME}" && \
     qm set "${TEMPLATE_VM_ID}" --virtio0 "${TEMPLATE_STORAGE_NAME}:vm-${TEMPLATE_VM_ID}-disk-0,media=disk,discard=on" && \
