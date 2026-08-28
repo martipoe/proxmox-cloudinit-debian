@@ -45,8 +45,17 @@ if qm status "${PROVISION_VM_ID}" >/dev/null 2>&1; then
     if [[ "${PROVISION_VM_DATA_DISK_PERSISTENCE}" == "true" ]]; then
         echo "Persistence for data disk ${PROVISION_VM_DATA_DISK_NAME} is enabled. Attempting to unattach and unreference existing data disk to preserve it before destroying VM."
         qm set "${PROVISION_VM_ID}" -delete virtio1
+        # qm set -delete moves the disk to the next free unusedN slot, not necessarily unused0
+        # (e.g. a prior interrupted run may already have left another disk in unused0) - match
+        # by disk identity rather than assuming a fixed slot number.
+        vm_conf="/etc/pve/qemu-server/${PROVISION_VM_ID}.conf"
+        unused_pattern="^unused[0-9]+: ${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}\$"
+        if ! grep -qE "${unused_pattern}" "${vm_conf}"; then
+            echo "ERROR: could not find unattached data disk vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME} in ${vm_conf} after detaching virtio1. Aborting before destroy to avoid deleting the data disk."
+            exit 1
+        fi
         # remove from /etc/pve/qemu-server/ so it becomes unreferenced and cannot be deleted via qm destroy --purge
-        sed -i "/unused0: ${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME}\$/d" "/etc/pve/qemu-server/${PROVISION_VM_ID}.conf"
+        sed -i -E "/${unused_pattern}/d" "${vm_conf}"
         destroy_unreferenced_disks="false"
     fi
 
