@@ -31,7 +31,7 @@ wget --timestamping "${TEMPLATE_QCOW2_URL}" && \
     sha512sum -c <(grep "${qcow2_filename}" "${qcow2_sha512sums}")
 
 if qm list | grep -q "${TEMPLATE_VM_ID}"; then
-    read -p "WARNING: VM ${TEMPLATE_VM_ID} already exists. Destroy it including all associated disks and backup job configurations? (Y/N): " confirm
+    read -r -p "WARNING: VM ${TEMPLATE_VM_ID} already exists. Destroy it including all associated disks and backup job configurations? (Y/N): " confirm
     if [[ "${confirm}" == [yY] || "${confirm}" == [yY][eE][sS] ]]; then
         qm stop "${TEMPLATE_VM_ID}"
         qm destroy --purge true "${TEMPLATE_VM_ID}"

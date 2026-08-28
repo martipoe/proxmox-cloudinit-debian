@@ -37,7 +37,7 @@ if qm status "${PROVISION_VM_ID}" >/dev/null 2>&1; then
 
     echo "WARNING: VM ${PROVISION_VM_ID} with name '${PROVISION_VM_NAME}' already exists:"
     qm config "${PROVISION_VM_ID}"
-    read -p "Destroy it including all associated disks and backup job configurations? (Y/N): " confirm_purge
+    read -r -p "Destroy it including all associated disks and backup job configurations? (Y/N): " confirm_purge
     if [[ ! "${confirm_purge}" =~ ^([yY]|[yY][eE][sS])$ ]]; then
         exit 1
     fi
@@ -70,6 +70,7 @@ mkdir -p "${PROVISION_CLOUDINIT_STORAGE_PATH}/snippets/${PROVISION_VM_ID}/" && \
 
 # Create full clone from template VM (https://www.reddit.com/r/Proxmox/comments/18dp3h6/should_i_use_linked_clones/),
 # resize root disk, configure resources and mount cloudinit snippet.
+# shellcheck disable=SC2086 # PROVISION_VM_NETWORKING intentionally expands into multiple --netN args
 qm clone "${TEMPLATE_VM_ID}" "${PROVISION_VM_ID}" --name "${PROVISION_VM_NAME}" --storage "${PROVISION_VM_STORAGE_NAME}" --full true && \
     qm resize "${PROVISION_VM_ID}" virtio0 "${PROVISION_VM_ROOT_DISK_SIZE}" && \
     qm set "${PROVISION_VM_ID}" --memory "${PROVISION_VM_MEM_SIZE}" --cores "${PROVISION_VM_CORES}" ${PROVISION_VM_NETWORKING} && \
@@ -83,7 +84,7 @@ if [[ -n "${PROVISION_VM_DATA_DISK_SIZE}" ]]; then
             qm rescan --vmid "${PROVISION_VM_ID}" && \
             qm set "${PROVISION_VM_ID}" --virtio1 "${PROVISION_VM_DATA_STORAGE_NAME}:vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME},size=${PROVISION_VM_DATA_DISK_SIZE},media=disk,discard=on"
         else
-            read -p "ERROR: Data disk vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME} not found in storage ${PROVISION_VM_DATA_STORAGE_NAME}. Do you want to create a new data disk instead? (Y/N): " recreate_confirm
+            read -r -p "ERROR: Data disk vm-${PROVISION_VM_ID}-${PROVISION_VM_DATA_DISK_NAME} not found in storage ${PROVISION_VM_DATA_STORAGE_NAME}. Do you want to create a new data disk instead? (Y/N): " recreate_confirm
             if [[ "${recreate_confirm}" == [yY] || "${recreate_confirm}" == [yY][eE][sS] ]]; then
                 PROVISION_VM_DATA_DISK_PERSISTENCE="false"
             else
