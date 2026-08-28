@@ -26,6 +26,11 @@ if [[ "${qcow2_filename}" != *.qcow2 ]]; then
     exit 1
 fi
 
+# Note: unlike Debian's ISO/CD images, cloud.debian.org does not publish a signed
+# SHA512SUMS.sign for these builds. This check only guards against transport corruption
+# and a mismatch between image and checksum file - it does not authenticate the image
+# against a compromised or MITM'd cloud.debian.org, since both files come from the same
+# unsigned source over plain TLS.
 wget --timestamping "${TEMPLATE_QCOW2_URL}" && \
     wget "${TEMPLATE_QCOW2_CHECKSUMS_URL}" && \
     sha512sum -c <(grep "${qcow2_filename}" "${qcow2_sha512sums}")

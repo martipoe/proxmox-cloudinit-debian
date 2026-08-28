@@ -45,6 +45,8 @@ cd proxmox-cloudinit-debian
 
 Debian provides cloudinit-ready daily image builds at https://cloud.debian.org/images/cloud/trixie/latest/. They only have a single root partition - creating templates with a partitioning schemes requires custom installations with preseeds, not implemented here.
 
+`1-template.sh` verifies the downloaded image against `SHA512SUMS`. Unlike Debian's ISO/CD images, these cloud image checksums are **not GPG-signed** - the check only protects against transport corruption or a mismatched checksum entry, not a compromised or MITM'd `cloud.debian.org` (both files are fetched from the same unsigned source over TLS).
+
 The VM does not require networking, because we will not boot it.
 
 Each Template VM needs its own subdirectory in `./template/${TEMPLATE_VM_NAME}/` with these files:
