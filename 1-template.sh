@@ -4,7 +4,10 @@
 
 set -euxo pipefail
 
-env_file="./template/$1/.env"
+# template/ is expected one directory up from this repository's own checkout, not inside
+# it - see README for the intended layout (this repo checked out as a subdirectory, with
+# your own template/ and provision/ as siblings of it).
+env_file="../template/$1/.env"
 if [[ -f "${env_file}" ]]; then
     set -a
     source "${env_file}"

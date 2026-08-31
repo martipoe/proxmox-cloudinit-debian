@@ -4,7 +4,10 @@
 
 set -euxo pipefail
 
-env_file="./provision/$1/.env"
+# provision/ is expected one directory up from this repository's own checkout, not inside
+# it - see README for the intended layout (this repo checked out as a subdirectory, with
+# your own template/ and provision/ as siblings of it).
+env_file="../provision/$1/.env"
 if [[ -f "${env_file}" ]]; then
     set -a
     source "${env_file}"
@@ -14,13 +17,13 @@ else
     exit 1
 fi
 
-cloudinit_user_data="./provision/${PROVISION_VM_NAME}/user-data"
+cloudinit_user_data="../provision/${PROVISION_VM_NAME}/user-data"
 if [[ ! -f "${cloudinit_user_data}" ]]; then
     echo "ERROR: ${cloudinit_user_data} not found"
     exit 1
 fi
 
-cloudinit_network_config="./provision/${PROVISION_VM_NAME}/network-config"
+cloudinit_network_config="../provision/${PROVISION_VM_NAME}/network-config"
 if [[ ! -f "${cloudinit_network_config}" ]]; then
     echo "ERROR: ${cloudinit_network_config} not found"
     exit 1

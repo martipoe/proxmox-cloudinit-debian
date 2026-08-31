@@ -33,13 +33,36 @@ Additional information:
 
 ## Usage
 
+This repository is a tool, not a place to store your own host configuration - it is meant to be vendored as a subdirectory of your own (ideally private) repository, with your `template/` and `provision/` directories living as siblings of it, one level up:
+
+```
+your-proxmox-config/          <- your own (e.g. private) repository
+  proxmox-cloudinit-debian/   <- this repository, vendored via git subtree
+  template/                   <- your real templates
+  provision/                  <- your real hosts
+```
+
 ```bash
-# user@local:~#
-git clone git@github.com:martipoe/proxmox-cloudinit-debian.git
+# from the root of your-proxmox-config, an existing repository of your own
+git subtree add --prefix=proxmox-cloudinit-debian git@github.com:martipoe/proxmox-cloudinit-debian.git main --squash
+mkdir -p template provision
 cd proxmox-cloudinit-debian
 ```
 
-**All configuration changes should be committed to this repository and can then be reused for future rebuilds and migrations.**
+(A plain `git clone git@github.com:martipoe/proxmox-cloudinit-debian.git` into that same `proxmox-cloudinit-debian/` subdirectory works just as well if you don't need `your-proxmox-config` to be a git repository in its own right.)
+
+Both scripts always resolve `template/<name>` / `provision/<name>` one directory up from wherever they're run from - run them from inside this repository's checkout, as shown below.
+
+**All configuration changes should be committed to `your-proxmox-config` and can then be reused for future rebuilds and migrations.**
+
+### Updating the vendored tool
+
+```bash
+# from the root of your-proxmox-config
+git subtree pull --prefix=proxmox-cloudinit-debian git@github.com:martipoe/proxmox-cloudinit-debian.git main --squash
+```
+
+`--squash` keeps `your-proxmox-config`'s history from being polluted by every commit ever made in this tool's history - only a single merge commit per pull is added. Since you're only ever pulling here, not pushing local changes back out via `git subtree push`, this doesn't need `git subtree split` and so avoids the cache-collision failures (`fatal: cache for <sha> already exists!`) that a `push` can hit if this prefix's history ever contains a remove-then-re-add.
 
 ### Create Template VM
 
@@ -49,10 +72,12 @@ Debian provides cloudinit-ready daily image builds at https://cloud.debian.org/i
 
 The VM does not require networking, because we will not boot it.
 
-Each Template VM needs its own subdirectory in `./template/${TEMPLATE_VM_NAME}/` with these files:
+Each Template VM needs its own subdirectory in `../template/${TEMPLATE_VM_NAME}/` (one level up from this repository's checkout) with these files:
 - .env
 
-*./template/${TEMPLATE_VM_NAME}/.env*:
+`examples/template/debian-13/` is a complete, working starting point - copy it into `../template/debian-13/` and adjust the values as needed.
+
+*../template/${TEMPLATE_VM_NAME}/.env*:
 ```bash
 # Source for cloudinit ready Debian Image, pinned to a dated build (not /latest/) so
 # re-running 1-template.sh always produces the same template. Bump deliberately when a
@@ -71,23 +96,26 @@ TEMPLATE_VM_MEM=512
 ```
 
 ```bash
-# sync repository
-rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
+# from your-proxmox-config/proxmox-cloudinit-debian/, copy the example as a starting point (first time only)
+cp -r examples/template/debian-13 ../template/debian-13
+
+# sync your whole workspace (the tool checkout plus your template/ and provision/) to the host
+cd .. && rsync -avz --delete * proxmox.lan:your-proxmox-config/
 
 # create template VM
-ssh proxmox.lan "cd proxmox-cloudinit-debian && /bin/bash ./1-template.sh debian-13"
+ssh proxmox.lan "cd your-proxmox-config/proxmox-cloudinit-debian && /bin/bash ./1-template.sh debian-13"
 ```
 
 ### Provision a VM from the Template VM
 
-Configs and .env for the provisioned VM in *./provision/docker-*.lan* are exemplary.
-
-Each VM needs its own subdirectory in `./provision/${PROVISION_VM_NAME}/` with these files:
+Each VM needs its own subdirectory in `../provision/${PROVISION_VM_NAME}/` (one level up from this repository's checkout) with these files:
 - .env
 - user-data
 - network-config
 
-*./provision/${PROVISION_VM_NAME}/.env*:
+`examples/provision/docker-ext4.lan/` and `examples/provision/docker-xfs.lan/` are complete, working starting points - copy one into `../provision/<your-host>/` and adjust the values.
+
+*../provision/${PROVISION_VM_NAME}/.env*:
 ```bash
 # ID from template/name/.env
 TEMPLATE_VM_ID=9001
@@ -120,11 +148,16 @@ Provisioning behavior:
 4. If persistence is disabled, a new data disk is created during provisioning.
 
 ```bash
-# sync repository
-rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
+cd your-proxmox-config/proxmox-cloudinit-debian
+
+# copy an example as a starting point (first time only)
+cp -r examples/provision/docker-xfs.lan ../provision/docker-xfs.lan
+
+# sync your whole workspace (the tool checkout plus your template/ and provision/) to the host
+cd .. && rsync -avz --delete * proxmox.lan:your-proxmox-config/
 
 # provision VM
-ssh proxmox.lan "cd proxmox-cloudinit-debian && /bin/bash ./2-provision.sh docker-xfs.lan"
+ssh proxmox.lan "cd your-proxmox-config/proxmox-cloudinit-debian && /bin/bash ./2-provision.sh docker-xfs.lan"
 ```
 
 ## Inspired by
