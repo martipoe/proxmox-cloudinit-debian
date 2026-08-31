@@ -4,23 +4,10 @@
 
 set -euxo pipefail
 
-# Look for template/$1 here first, then one directory up - this lets the scripts be
-# vendored (e.g. as a git submodule) with your own template/ and provision/ directories
-# kept as siblings of the vendored checkout instead of inside it.
-template_dir=""
-for base in . ..; do
-    if [[ -d "${base}/template/$1" ]]; then
-        template_dir="${base}/template/$1"
-        break
-    fi
-done
-
-if [[ -z "${template_dir}" ]]; then
-    echo "ERROR: template/$1 not found in . or .."
-    exit 1
-fi
-
-env_file="${template_dir}/.env"
+# template/ is expected one directory up from this repository's own checkout, not inside
+# it - see README for the intended layout (this repo checked out as a subdirectory, with
+# your own template/ and provision/ as siblings of it).
+env_file="../template/$1/.env"
 if [[ -f "${env_file}" ]]; then
     set -a
     source "${env_file}"
