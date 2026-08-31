@@ -52,6 +52,8 @@ The VM does not require networking, because we will not boot it.
 Each Template VM needs its own subdirectory in `./template/${TEMPLATE_VM_NAME}/` with these files:
 - .env
 
+`examples/template/debian-13/` is a complete, working starting point - copy it into `./template/debian-13/` and adjust the values as needed. `template/` and `provision/` themselves stay empty in this repository so your real hosts don't get mixed up with the examples.
+
 *./template/${TEMPLATE_VM_NAME}/.env*:
 ```bash
 # Source for cloudinit ready Debian Image, pinned to a dated build (not /latest/) so
@@ -71,6 +73,9 @@ TEMPLATE_VM_MEM=512
 ```
 
 ```bash
+# copy the example as a starting point (first time only)
+cp -r examples/template/debian-13 template/debian-13
+
 # sync repository
 rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 
@@ -80,12 +85,12 @@ ssh proxmox.lan "cd proxmox-cloudinit-debian && /bin/bash ./1-template.sh debian
 
 ### Provision a VM from the Template VM
 
-Configs and .env for the provisioned VM in *./provision/docker-*.lan* are exemplary.
-
 Each VM needs its own subdirectory in `./provision/${PROVISION_VM_NAME}/` with these files:
 - .env
 - user-data
 - network-config
+
+`examples/provision/docker-ext4.lan/` and `examples/provision/docker-xfs.lan/` are complete, working starting points - copy one into `./provision/<your-host>/` and adjust the values.
 
 *./provision/${PROVISION_VM_NAME}/.env*:
 ```bash
@@ -120,6 +125,9 @@ Provisioning behavior:
 4. If persistence is disabled, a new data disk is created during provisioning.
 
 ```bash
+# copy an example as a starting point (first time only)
+cp -r examples/provision/docker-xfs.lan provision/docker-xfs.lan
+
 # sync repository
 rsync -avz --delete * proxmox.lan:proxmox-cloudinit-debian/
 
