@@ -79,12 +79,10 @@ Each Template VM needs its own subdirectory in `../template/${TEMPLATE_VM_NAME}/
 
 *../template/${TEMPLATE_VM_NAME}/.env*:
 ```bash
-# Source for cloudinit ready Debian Image, pinned to a dated build (not /latest/) so
-# re-running 1-template.sh always produces the same template. Bump deliberately when a
-# newer build is wanted; see available builds at https://cloud.debian.org/images/cloud/trixie/
-TEMPLATE_QCOW2_URL="https://cloud.debian.org/images/cloud/trixie/20260826-2582/debian-13-generic-amd64.qcow2"
+# Source for cloudinit ready Debian Image
+TEMPLATE_QCOW2_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
 # Checksums
-TEMPLATE_QCOW2_CHECKSUMS_URL="https://cloud.debian.org/images/cloud/trixie/20260826-2582/SHA512SUMS"
+TEMPLATE_QCOW2_CHECKSUMS_URL="https://cloud.debian.org/images/cloud/trixie/latest/SHA512SUMS"
 # ID of the Template VM
 TEMPLATE_VM_ID=9001
 # Name of the Template VM
