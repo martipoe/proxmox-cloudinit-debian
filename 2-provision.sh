@@ -4,7 +4,23 @@
 
 set -euxo pipefail
 
-env_file="./provision/$1/.env"
+# Look for provision/$1 here first, then one directory up - this lets the scripts be
+# vendored (e.g. as a git submodule) with your own template/ and provision/ directories
+# kept as siblings of the vendored checkout instead of inside it.
+provision_base=""
+for base in . ..; do
+    if [[ -d "${base}/provision/$1" ]]; then
+        provision_base="${base}"
+        break
+    fi
+done
+
+if [[ -z "${provision_base}" ]]; then
+    echo "ERROR: provision/$1 not found in . or .."
+    exit 1
+fi
+
+env_file="${provision_base}/provision/$1/.env"
 if [[ -f "${env_file}" ]]; then
     set -a
     source "${env_file}"
@@ -14,13 +30,13 @@ else
     exit 1
 fi
 
-cloudinit_user_data="./provision/${PROVISION_VM_NAME}/user-data"
+cloudinit_user_data="${provision_base}/provision/${PROVISION_VM_NAME}/user-data"
 if [[ ! -f "${cloudinit_user_data}" ]]; then
     echo "ERROR: ${cloudinit_user_data} not found"
     exit 1
 fi
 
-cloudinit_network_config="./provision/${PROVISION_VM_NAME}/network-config"
+cloudinit_network_config="${provision_base}/provision/${PROVISION_VM_NAME}/network-config"
 if [[ ! -f "${cloudinit_network_config}" ]]; then
     echo "ERROR: ${cloudinit_network_config} not found"
     exit 1

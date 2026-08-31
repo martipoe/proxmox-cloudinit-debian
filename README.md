@@ -41,6 +41,8 @@ cd proxmox-cloudinit-debian
 
 **All configuration changes should be committed to this repository and can then be reused for future rebuilds and migrations.**
 
+Both scripts look for `template/<name>` / `provision/<name>` in the current directory first, then one directory up. This lets you vendor this repository as a dependency (e.g. as a git submodule) and keep your own `template/`/`provision/` directories as siblings of the vendored checkout instead of inside it - run the scripts from the vendored checkout's directory and they'll find your data one level up.
+
 ### Create Template VM
 
 Debian provides cloudinit-ready daily image builds at https://cloud.debian.org/images/cloud/trixie/latest/. They only have a single root partition - creating templates with a partitioning schemes requires custom installations with preseeds, not implemented here.
