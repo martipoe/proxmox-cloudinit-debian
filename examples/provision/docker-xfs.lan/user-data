@@ -48,7 +48,6 @@ packages:
   - vim
   - wget
   - qemu-guest-agent
-  - xfsprogs
 
 write_files:
   - path: /etc/docker/daemon.json
@@ -87,9 +86,17 @@ runcmd:
   - sysctl net.ipv6.conf.all.forwarding=1
   - echo "net.ipv4.ip_forward=1" >> /etc/sysctl.d/99-docker.conf
   - echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.d/99-docker.conf
-  # fs_setup is not possible as xfsprogs are not pre-installed in the Debian cloudinit image, so we create the filesystem in runcmd after installing xfsprogs
-  # create filesystem for /opt once xfsprogs are installed
-  - blkid /dev/vdb || mkfs -t xfs -n ftype=1 -L opt /dev/vdb
+  # fs_setup is not possible as xfsprogs are not pre-installed in the Debian cloudinit image, and
+  # packages: is only installed in the final stage, after runcmd, so install it here directly
+  - apt install --no-install-recommends -y xfsprogs
+  # create filesystem for /opt, unless one is already present (never overwrite existing data)
+  - |
+    if blkid -o value -s TYPE /dev/vdb >/dev/null 2>&1; then
+      echo "/dev/vdb already has a filesystem, refusing to mkfs" >&2
+      false
+    else
+      mkfs -t xfs -n ftype=1 -L opt /dev/vdb
+    fi
   - mount -a
   # install docker compose
   - curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
